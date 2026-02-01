@@ -1,0 +1,2 @@
+# No additional requirements - all dependencies are included with ComfyUI
+# aiohttp is already installed as part of ComfyUI
