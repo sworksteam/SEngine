@@ -36,6 +36,13 @@ class SEngineLoraLoader:
         return {
             "required": {
                 "model": ("MODEL",),
+                "overall_strength": ("FLOAT", {
+                    "default": 1.0,
+                    "min": 0.0,
+                    "max": 1.0,
+                    "step": 0.05,
+                    "display": "slider",
+                }),
                 "sengine_data": ("STRING", {
                     "default": "{}",
                     "multiline": True,
@@ -55,10 +62,11 @@ class SEngineLoraLoader:
     def IS_CHANGED(cls, **kwargs):
         return float("nan")
 
-    def apply_loras(self, model, clip=None, sengine_data="{}"):
+    def apply_loras(self, model, overall_strength=1.0, clip=None, sengine_data="{}"):
         """Apply selected LoRAs to the model and optionally clip."""
 
         print(f"[SEngine] Received sengine_data: {sengine_data[:200] if sengine_data else 'None'}...")
+        print(f"[SEngine] Overall strength: {overall_strength}")
 
         # Parse data
         try:
@@ -106,8 +114,12 @@ class SEngineLoraLoader:
             if not version_id:
                 continue
 
+            # Apply overall strength multiplier
+            strength = strength * overall_strength
+            strength_clip = strength_clip * overall_strength
+
             if strength == 0 and strength_clip == 0:
-                print(f"[SEngine] Skipping {name} (strength=0)")
+                print(f"[SEngine] Skipping {name} (effective strength=0)")
                 continue
 
             # Get local path or download

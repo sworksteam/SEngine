@@ -28,7 +28,7 @@ git clone https://github.com/SWORKS_TEAM/SEngine.git
 1. Download the repository as a ZIP file
 2. Extract to `ComfyUI/custom_nodes/SEngine`
 
-### Option 3: ComfyUI Manager (pull request created, PENDING)
+### Option 3: ComfyUI Manager
 
 Search for "SEngine" in ComfyUI Manager and click Install.
 
@@ -130,4 +130,3 @@ MIT License
 
 - **SWORKS_TEAM** - LoRA creators
 - Built for the ComfyUI community
-

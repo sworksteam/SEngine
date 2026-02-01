@@ -507,14 +507,18 @@ class SEngineManager {
         const node = this.targetNode;
         if (!node) return;
 
-        // Keep only the sengine_data widget (hidden but needed for execution)
+        // Keep overall_strength and sengine_data widgets
+        const overallWidget = node.widgets?.find(w => w.name === "overall_strength");
         const dataWidget = node.widgets?.find(w => w.name === "sengine_data");
-        node.widgets = dataWidget ? [dataWidget] : [];
 
-        // Hide the data widget
+        // Start with core widgets
+        node.widgets = [];
+        if (overallWidget) node.widgets.push(overallWidget);
         if (dataWidget) {
+            // Hide the data widget
             dataWidget.computeSize = () => [0, -4];
             dataWidget.type = "hidden";
+            node.widgets.push(dataWidget);
         }
 
         // Add slider for each LoRA
@@ -560,9 +564,9 @@ class SEngineManager {
             node.bgcolor = null;
         }
 
-        // Resize
-        const h = 30 + this.selectedLoras.length * 24;
-        node.size = [Math.max(node.size?.[0] || 200, 200), Math.max(h, 60)];
+        // Resize (account for overall_strength widget + LoRA sliders)
+        const h = 56 + this.selectedLoras.length * 24;
+        node.size = [Math.max(node.size?.[0] || 200, 200), Math.max(h, 80)];
 
         app.graph?.setDirtyCanvas(true, true);
     }
@@ -1081,7 +1085,7 @@ app.registerExtension({
         nodeType.prototype.onNodeCreated = function() {
             origCreated?.apply(this, arguments);
 
-            // Hide the sengine_data widget
+            // Hide only the sengine_data widget, keep overall_strength visible
             const dataWidget = this.widgets?.find(w => w.name === "sengine_data");
             if (dataWidget) {
                 dataWidget.computeSize = () => [0, -4];
@@ -1112,7 +1116,7 @@ app.registerExtension({
         nodeType.prototype.configure = function(data) {
             origConfigure?.call(this, data);
 
-            // Hide the sengine_data widget
+            // Hide only sengine_data widget, keep overall_strength visible
             const dataWidget = this.widgets?.find(w => w.name === "sengine_data");
             if (dataWidget) {
                 dataWidget.computeSize = () => [0, -4];
