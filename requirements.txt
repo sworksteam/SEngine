@@ -1,2 +1,7 @@
-# No additional requirements - all dependencies are included with ComfyUI
+# Required for Civitai upload functionality
+Pillow
+blurhash
+numpy
+requests
+
 # aiohttp is already installed as part of ComfyUI

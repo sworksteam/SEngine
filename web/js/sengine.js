@@ -199,6 +199,137 @@ const STYLES = `
     opacity: 0.7;
 }
 .sengine-selected-tag-remove:hover { opacity: 1; }
+.sengine-upload-section {
+    padding: 12px 16px;
+    background: #252525;
+    border-top: 1px solid #333;
+}
+.sengine-upload-section-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+.sengine-cookie-input {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #444;
+    border-radius: 6px;
+    background: #1e1e1e;
+    color: #fff;
+    font-size: 11px;
+    box-sizing: border-box;
+    margin-bottom: 10px;
+}
+.sengine-cookie-input:focus { border-color: #5a5; outline: none; }
+.sengine-upload-btn {
+    width: 100%;
+    padding: 10px 16px;
+    border: none;
+    border-radius: 6px;
+    background: linear-gradient(135deg, #4a7 0%, #385 100%);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+}
+.sengine-upload-btn:hover { background: linear-gradient(135deg, #5b8 0%, #496 100%); }
+.sengine-upload-btn:disabled {
+    background: #333;
+    color: #666;
+    cursor: not-allowed;
+}
+.sengine-upload-status {
+    margin-top: 8px;
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+}
+.sengine-upload-status.success { color: #5a5; }
+.sengine-upload-status.error { color: #f66; }
+.sengine-modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.8);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10000;
+}
+.sengine-modal {
+    background: #2a2a2a;
+    border-radius: 12px;
+    padding: 20px;
+    max-width: 90vw;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+}
+.sengine-modal-title {
+    font-size: 14px;
+    font-weight: 600;
+    color: #fff;
+    margin-bottom: 12px;
+    text-align: center;
+}
+.sengine-modal-subtitle {
+    font-size: 11px;
+    color: #888;
+    margin-bottom: 16px;
+    text-align: center;
+}
+.sengine-modal-preview {
+    max-width: 80vw;
+    max-height: 60vh;
+    object-fit: contain;
+    border-radius: 8px;
+    margin-bottom: 16px;
+}
+.sengine-modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: center;
+}
+.sengine-modal-btn {
+    padding: 10px 20px;
+    border: none;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+}
+.sengine-modal-btn.primary {
+    background: linear-gradient(135deg, #4a7 0%, #385 100%);
+    color: #fff;
+}
+.sengine-modal-btn.primary:hover {
+    background: linear-gradient(135deg, #5b8 0%, #496 100%);
+}
+.sengine-modal-btn.secondary {
+    background: #444;
+    color: #fff;
+}
+.sengine-modal-btn.secondary:hover {
+    background: #555;
+}
+.sengine-modal-btn.cancel {
+    background: #333;
+    color: #888;
+}
+.sengine-modal-btn.cancel:hover {
+    background: #3a3a3a;
+    color: #aaa;
+}
 .sengine-browser {
     flex: 1;
     overflow-y: auto;
@@ -430,7 +561,9 @@ class SEngineManager {
         this.searchQuery = "";
         this.selectedTags = [];
         this.apiKey = localStorage.getItem("sengine_api_key") || "";
+        this.sessionCookie = localStorage.getItem("sengine_session_cookie") || "";
         this.targetNode = null;
+        this.lastGeneratedImage = null;
     }
 
     getOrCreateNode() {
@@ -707,6 +840,15 @@ class SEngineManager {
                     <div class="sengine-empty">Select LoRAs above</div>
                 </div>
             </div>
+            <div class="sengine-upload-section">
+                <div class="sengine-upload-section-title">Upload to Civitai</div>
+                <input type="password" class="sengine-cookie-input sengine-session-cookie" placeholder="Civitai session cookie...">
+                <button class="sengine-upload-btn" disabled>
+                    <span>📤</span>
+                    <span>Upload Last Image</span>
+                </button>
+                <div class="sengine-upload-status"></div>
+            </div>
         `;
 
         this.panel = panel;
@@ -726,8 +868,23 @@ class SEngineManager {
 
         panel.querySelector(".sengine-refresh").onclick = () => this.loadLoras(true);
 
+        // Session cookie input
+        const cookieInput = panel.querySelector(".sengine-session-cookie");
+        cookieInput.value = this.sessionCookie;
+        cookieInput.oninput = (e) => {
+            this.sessionCookie = e.target.value;
+            localStorage.setItem("sengine_session_cookie", this.sessionCookie);
+            this.updateUploadButton();
+        };
+
+        // Upload button
+        panel.querySelector(".sengine-upload-btn").onclick = () => this.uploadToCivitai();
+
         // Setup filter dropdown after panel is ready
-        setTimeout(() => this.setupFilterDropdown(), 0);
+        setTimeout(() => {
+            this.setupFilterDropdown();
+            this.updateUploadButton();
+        }, 0);
 
         return panel;
     }
@@ -834,6 +991,313 @@ class SEngineManager {
                 dropdown.classList.remove("open");
             }
         });
+    }
+
+    updateUploadButton() {
+        const btn = this.panel?.querySelector(".sengine-upload-btn");
+        if (!btn) return;
+
+        const hasImage = !!this.lastGeneratedImage;
+        const hasCookie = !!this.sessionCookie;
+        btn.disabled = !hasImage || !hasCookie;
+
+        const label = btn.querySelector("span:last-child");
+        if (label) {
+            if (!hasCookie) {
+                label.textContent = "Enter session cookie";
+            } else if (!hasImage) {
+                label.textContent = "No image generated yet";
+            } else {
+                label.textContent = "Upload Last Image";
+            }
+        }
+    }
+
+    setLastGeneratedImage(imagePath) {
+        this.lastGeneratedImage = imagePath;
+        this.updateUploadButton();
+        console.log("[SEngine] Last generated image:", imagePath);
+    }
+
+    extractWorkflowMetadata() {
+        /**
+         * Extract generation metadata from workflow nodes.
+         * Looks for SamplerCustomAdvanced/KSampler and CLIPTextEncode nodes.
+         */
+        const metadata = {
+            prompt: null,
+            negative_prompt: null,
+            cfg_scale: null,
+            steps: null,
+            sampler: null,
+            seed: null,
+            model_name: null,
+        };
+
+        if (!app.graph) return metadata;
+
+        for (const node of app.graph._nodes) {
+            // Look for sampler nodes
+            if (node.type === "SamplerCustomAdvanced" || node.type === "KSampler" || node.type === "KSamplerAdvanced") {
+                // Try to get values from widgets
+                for (const widget of (node.widgets || [])) {
+                    if (widget.name === "cfg" || widget.name === "cfg_scale") {
+                        metadata.cfg_scale = widget.value;
+                    }
+                    if (widget.name === "steps") {
+                        metadata.steps = widget.value;
+                    }
+                    if (widget.name === "sampler_name" || widget.name === "sampler") {
+                        metadata.sampler = widget.value;
+                    }
+                    if (widget.name === "seed") {
+                        metadata.seed = widget.value;
+                    }
+                    if (widget.name === "noise_seed") {
+                        metadata.seed = widget.value;
+                    }
+                }
+            }
+
+            // Look for BasicScheduler for steps
+            if (node.type === "BasicScheduler") {
+                for (const widget of (node.widgets || [])) {
+                    if (widget.name === "steps") {
+                        metadata.steps = widget.value;
+                    }
+                }
+            }
+
+            // Look for BasicGuider or CFGGuider for cfg
+            if (node.type === "BasicGuider" || node.type === "CFGGuider") {
+                for (const widget of (node.widgets || [])) {
+                    if (widget.name === "cfg") {
+                        metadata.cfg_scale = widget.value;
+                    }
+                }
+            }
+
+            // Look for KSamplerSelect for sampler name
+            if (node.type === "KSamplerSelect") {
+                for (const widget of (node.widgets || [])) {
+                    if (widget.name === "sampler_name") {
+                        metadata.sampler = widget.value;
+                    }
+                }
+            }
+
+            // Look for RandomNoise for seed
+            if (node.type === "RandomNoise") {
+                for (const widget of (node.widgets || [])) {
+                    if (widget.name === "noise_seed") {
+                        metadata.seed = widget.value;
+                    }
+                }
+            }
+
+            // Look for CLIP text encode (positive prompt)
+            if (node.type === "CLIPTextEncode") {
+                // Check if this is connected to positive conditioning
+                // For now, use the first one we find as positive, second as negative
+                for (const widget of (node.widgets || [])) {
+                    if (widget.name === "text") {
+                        if (metadata.prompt === null) {
+                            metadata.prompt = widget.value;
+                        } else if (metadata.negative_prompt === null) {
+                            metadata.negative_prompt = widget.value;
+                        }
+                    }
+                }
+            }
+
+            // Look for model loader nodes (UNETLoader, Load Diffusion Model)
+            if (node.type === "UNETLoader" || node.type === "Load Diffusion Model") {
+                for (const widget of (node.widgets || [])) {
+                    if (widget.name === "unet_name") {
+                        metadata.model_name = widget.value;
+                    }
+                }
+            }
+
+            // Look for LoadImage nodes (indicates img2img workflow)
+            // Check various possible node types for image loading
+            const imageLoadTypes = ["LoadImage", "Load Image", "LoadImageMask", "LoadImageFromUrl"];
+            if (imageLoadTypes.includes(node.type) || node.type?.toLowerCase().includes("loadimage")) {
+                console.log("[SEngine] Found image load node:", node.type, node.widgets?.map(w => `${w.name}=${w.value}`));
+                for (const widget of (node.widgets || [])) {
+                    if (widget.name === "image" && widget.value) {
+                        if (!metadata.source_images) {
+                            metadata.source_images = [];
+                        }
+                        metadata.source_images.push(widget.value);
+                        console.log("[SEngine] Added source image:", widget.value);
+                    }
+                }
+            }
+        }
+
+        console.log("[SEngine] Extracted metadata:", JSON.stringify(metadata, null, 2));
+        console.log("[SEngine] All node types in graph:", app.graph._nodes.map(n => n.type));
+        return metadata;
+    }
+
+    showCompositePreviewModal(compositeBase64, metadata, loraVersionIds, sengineConfig) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement("div");
+            overlay.className = "sengine-modal-overlay";
+
+            overlay.innerHTML = `
+                <div class="sengine-modal">
+                    <div class="sengine-modal-title">Image-to-Image Detected</div>
+                    <div class="sengine-modal-subtitle">Would you like to upload the composite or just the generated image?</div>
+                    <img class="sengine-modal-preview" src="${compositeBase64}" alt="Composite Preview">
+                    <div class="sengine-modal-buttons">
+                        <button class="sengine-modal-btn primary" data-choice="composite">Upload Composite</button>
+                        <button class="sengine-modal-btn secondary" data-choice="original">Upload Original Only</button>
+                        <button class="sengine-modal-btn cancel" data-choice="cancel">Cancel</button>
+                    </div>
+                </div>
+            `;
+
+            overlay.addEventListener("click", (e) => {
+                const choice = e.target.dataset?.choice;
+                if (choice) {
+                    overlay.remove();
+                    resolve(choice);
+                }
+            });
+
+            document.body.appendChild(overlay);
+        });
+    }
+
+    async uploadToCivitai() {
+        if (!this.lastGeneratedImage || !this.sessionCookie) {
+            return;
+        }
+
+        const statusEl = this.panel?.querySelector(".sengine-upload-status");
+        const btn = this.panel?.querySelector(".sengine-upload-btn");
+
+        // Get workflow metadata
+        const metadata = this.extractWorkflowMetadata();
+
+        // Get LoRA version IDs from selected loras
+        const loraVersionIds = this.selectedLoras.map(l => l.version_id);
+
+        // Get SEngine configuration
+        let sengineConfig = null;
+        if (this.targetNode && this.selectedLoras.length > 0) {
+            const overallWidget = this.targetNode.widgets?.find(w => w.name === "overall_strength");
+            sengineConfig = {
+                overall_strength: overallWidget?.value ?? 1.0,
+                loras: this.selectedLoras.map(l => ({
+                    name: l.name,
+                    strength: l.strength,
+                })),
+            };
+        }
+
+        // Check if this is img2img and show preview
+        let useComposite = false;
+        if (metadata.source_images && metadata.source_images.length > 0) {
+            if (statusEl) {
+                statusEl.textContent = "Creating preview...";
+                statusEl.className = "sengine-upload-status";
+            }
+
+            try {
+                const previewResponse = await api.fetchApi("/sengine/preview-composite", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({
+                        image_path: this.lastGeneratedImage,
+                        image_subfolder: this.lastImageSubfolder || "",
+                        image_type: this.lastImageType || "output",
+                        source_images: metadata.source_images,
+                    }),
+                });
+
+                const previewResult = await previewResponse.json();
+
+                if (previewResult.success) {
+                    const choice = await this.showCompositePreviewModal(
+                        previewResult.composite_base64,
+                        metadata,
+                        loraVersionIds,
+                        sengineConfig
+                    );
+
+                    if (choice === "cancel") {
+                        if (statusEl) {
+                            statusEl.textContent = "Upload cancelled";
+                            statusEl.className = "sengine-upload-status";
+                        }
+                        return;
+                    }
+
+                    useComposite = (choice === "composite");
+                }
+            } catch (e) {
+                console.error("[SEngine] Preview error:", e);
+                // Continue with original image if preview fails
+            }
+        }
+
+        if (statusEl) {
+            statusEl.textContent = "Uploading...";
+            statusEl.className = "sengine-upload-status";
+        }
+        if (btn) btn.disabled = true;
+
+        try {
+            const response = await api.fetchApi("/sengine/upload", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    image_path: this.lastGeneratedImage,
+                    image_subfolder: this.lastImageSubfolder || "",
+                    image_type: this.lastImageType || "output",
+                    session_cookie: this.sessionCookie,
+                    lora_version_ids: loraVersionIds,
+                    prompt: metadata.prompt,
+                    negative_prompt: metadata.negative_prompt,
+                    cfg_scale: metadata.cfg_scale,
+                    steps: metadata.steps,
+                    sampler: metadata.sampler,
+                    seed: metadata.seed,
+                    model_name: metadata.model_name,
+                    sengine_config: sengineConfig,
+                    source_images: metadata.source_images || [],
+                    use_composite: useComposite,
+                }),
+            });
+
+            const result = await response.json();
+
+            if (result.success) {
+                if (statusEl) {
+                    statusEl.textContent = `Posted! ${result.post_url}`;
+                    statusEl.className = "sengine-upload-status success";
+                }
+                // Open the post in a new tab
+                window.open(result.post_url, "_blank");
+            } else {
+                if (statusEl) {
+                    statusEl.textContent = `Error: ${result.error}`;
+                    statusEl.className = "sengine-upload-status error";
+                }
+            }
+        } catch (e) {
+            console.error("[SEngine] Upload error:", e);
+            if (statusEl) {
+                statusEl.textContent = `Error: ${e.message}`;
+                statusEl.className = "sengine-upload-status error";
+            }
+        }
+
+        if (btn) btn.disabled = false;
+        this.updateUploadButton();
     }
 
     renderGrid() {
@@ -993,6 +1457,31 @@ app.registerExtension({
         // Throttle UI updates during download
         let lastUIUpdate = 0;
         const UI_UPDATE_INTERVAL = 500; // Update UI at most every 500ms
+
+        // Listen for executed nodes to capture generated images
+        api.addEventListener("executed", (event) => {
+            const output = event.detail?.output;
+            if (output?.images && output.images.length > 0) {
+                // Get the last image from the output
+                const lastImage = output.images[output.images.length - 1];
+                if (lastImage.filename) {
+                    // Construct the full path
+                    const subfolder = lastImage.subfolder || "";
+                    const type = lastImage.type || "output";
+                    // The image is in ComfyUI's output folder
+                    // We'll fetch the actual path from the server or construct it
+                    const imagePath = subfolder
+                        ? `${type}/${subfolder}/${lastImage.filename}`
+                        : `${type}/${lastImage.filename}`;
+
+                    // Store for upload - we need the actual filesystem path
+                    // ComfyUI stores output images in the output directory
+                    sengine.setLastGeneratedImage(lastImage.filename);
+                    sengine.lastImageSubfolder = subfolder;
+                    sengine.lastImageType = type;
+                }
+            }
+        });
 
         // Listen for download progress
         api.addEventListener("sengine_progress", (event) => {

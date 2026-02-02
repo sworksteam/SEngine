@@ -6,6 +6,7 @@ for klein-9b and klein-9b-base models.
 """
 import os
 import json
+import time
 import asyncio
 from aiohttp import web
 from server import PromptServer
@@ -13,6 +14,7 @@ from server import PromptServer
 from .sengine_node import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
 from .civitai_api import get_civitai_api
 from .lora_cache import get_cache_manager
+from .civitai_upload import CivitaiUploader, create_img2img_composite
 
 # Export node mappings
 __all__ = ['NODE_CLASS_MAPPINGS', 'NODE_DISPLAY_NAME_MAPPINGS', 'WEB_DIRECTORY']
@@ -181,6 +183,262 @@ async def clear_cache(request):
 
     except Exception as e:
         print(f"[SEngine] Error in clear_cache: {e}")
+        return web.json_response({
+            "success": False,
+            "error": str(e)
+        }, status=500)
+
+
+@PromptServer.instance.routes.post("/sengine/upload")
+async def upload_to_civitai(request):
+    """
+    Upload an image to Civitai and create a post.
+
+    Body (JSON):
+        image_path: Path to the image file (or filename for output images)
+        image_subfolder: Subfolder in output directory
+        image_type: Type (output, input, temp)
+        session_cookie: Civitai session cookie
+        lora_version_ids: List of LoRA version IDs to tag
+        prompt: Generation prompt
+        negative_prompt: Negative prompt
+        cfg_scale: CFG scale
+        steps: Number of steps
+        sampler: Sampler name
+        seed: Generation seed
+        title: Post title (optional)
+    """
+    try:
+        import functools
+        from pathlib import Path
+        import folder_paths
+
+        body = await request.json()
+
+        image_filename = body.get("image_path")
+        image_subfolder = body.get("image_subfolder", "")
+        image_type = body.get("image_type", "output")
+        session_cookie = body.get("session_cookie", "")
+
+        # Construct the full image path
+        if image_type == "output":
+            base_dir = folder_paths.get_output_directory()
+        elif image_type == "input":
+            base_dir = folder_paths.get_input_directory()
+        elif image_type == "temp":
+            base_dir = folder_paths.get_temp_directory()
+        else:
+            base_dir = folder_paths.get_output_directory()
+
+        if not image_filename:
+            return web.json_response({
+                "success": False,
+                "error": "image_path (filename) is required"
+            }, status=400)
+
+        if image_subfolder:
+            image_path = os.path.join(base_dir, image_subfolder, image_filename)
+        else:
+            image_path = os.path.join(base_dir, image_filename)
+
+        if not session_cookie:
+            return web.json_response({
+                "success": False,
+                "error": "session_cookie is required"
+            }, status=400)
+
+        if not os.path.exists(image_path):
+            return web.json_response({
+                "success": False,
+                "error": f"Image not found: {image_path}"
+            }, status=400)
+
+        # Get optional parameters
+        lora_version_ids = body.get("lora_version_ids", [])
+        prompt = body.get("prompt")
+        negative_prompt = body.get("negative_prompt")
+        cfg_scale = body.get("cfg_scale")
+        steps = body.get("steps")
+        sampler = body.get("sampler")
+        seed = body.get("seed")
+        title = body.get("title")
+        model_name = body.get("model_name")
+        sengine_config = body.get("sengine_config")
+        source_images = body.get("source_images", [])
+        use_composite = body.get("use_composite", False)
+
+        # Run upload in executor to not block
+        loop = asyncio.get_event_loop()
+
+        # Resolve source image paths (they're in the input directory)
+        source_image_paths = []
+        if source_images and use_composite:
+            input_dir = folder_paths.get_input_directory()
+            for src_filename in source_images:
+                src_path = os.path.join(input_dir, src_filename)
+                if os.path.exists(src_path):
+                    source_image_paths.append(Path(src_path))
+
+        def do_upload():
+            upload_image_path = Path(image_path)
+            composite_path = None
+
+            # If user chose composite and we have source images, create it
+            if use_composite and source_image_paths:
+                import tempfile
+                composite_path = Path(tempfile.gettempdir()) / f"sengine_composite_{int(time.time())}.png"
+                if create_img2img_composite(source_image_paths, Path(image_path), composite_path):
+                    print(f"[SEngine] Created img2img composite: {composite_path}")
+                    upload_image_path = composite_path
+                else:
+                    print("[SEngine] Failed to create composite, uploading original")
+
+            try:
+                uploader = CivitaiUploader(session_cookie)
+                result = uploader.create_post_with_image(
+                    image_path=upload_image_path,
+                    lora_version_ids=lora_version_ids,
+                    prompt=prompt,
+                    negative_prompt=negative_prompt,
+                    cfg_scale=cfg_scale,
+                    steps=steps,
+                    sampler=sampler,
+                    seed=seed,
+                    title=title,
+                    model_name=model_name,
+                    sengine_config=sengine_config,
+                    publish=True,
+                )
+                return result
+            finally:
+                # Clean up composite file
+                if composite_path and composite_path.exists():
+                    try:
+                        composite_path.unlink()
+                    except:
+                        pass
+
+        post_id = await loop.run_in_executor(None, do_upload)
+
+        if post_id:
+            return web.json_response({
+                "success": True,
+                "post_id": post_id,
+                "post_url": f"https://civitai.com/posts/{post_id}"
+            })
+        else:
+            return web.json_response({
+                "success": False,
+                "error": "Upload failed"
+            }, status=500)
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"[SEngine] Error in upload_to_civitai: {e}")
+        return web.json_response({
+            "success": False,
+            "error": str(e)
+        }, status=500)
+
+
+@PromptServer.instance.routes.post("/sengine/preview-composite")
+async def preview_composite(request):
+    """
+    Create a composite preview image for img2img workflows.
+    Returns the composite as a base64 encoded image.
+    """
+    try:
+        import base64
+        import tempfile
+        import folder_paths
+        from pathlib import Path
+
+        body = await request.json()
+
+        image_filename = body.get("image_path")
+        image_subfolder = body.get("image_subfolder", "")
+        image_type = body.get("image_type", "output")
+        source_images = body.get("source_images", [])
+
+        if not source_images:
+            return web.json_response({
+                "success": False,
+                "error": "No source images provided"
+            }, status=400)
+
+        # Get generated image path
+        if image_type == "output":
+            base_dir = folder_paths.get_output_directory()
+        elif image_type == "input":
+            base_dir = folder_paths.get_input_directory()
+        elif image_type == "temp":
+            base_dir = folder_paths.get_temp_directory()
+        else:
+            base_dir = folder_paths.get_output_directory()
+
+        if image_subfolder:
+            image_path = os.path.join(base_dir, image_subfolder, image_filename)
+        else:
+            image_path = os.path.join(base_dir, image_filename)
+
+        if not os.path.exists(image_path):
+            return web.json_response({
+                "success": False,
+                "error": f"Generated image not found: {image_path}"
+            }, status=400)
+
+        # Resolve source image paths
+        input_dir = folder_paths.get_input_directory()
+        source_image_paths = []
+        for src_filename in source_images:
+            src_path = os.path.join(input_dir, src_filename)
+            if os.path.exists(src_path):
+                source_image_paths.append(Path(src_path))
+
+        if not source_image_paths:
+            return web.json_response({
+                "success": False,
+                "error": "No valid source images found"
+            }, status=400)
+
+        # Create composite
+        composite_path = Path(tempfile.gettempdir()) / f"sengine_preview_{int(time.time())}.jpg"
+
+        loop = asyncio.get_event_loop()
+        success = await loop.run_in_executor(
+            None,
+            create_img2img_composite,
+            source_image_paths,
+            Path(image_path),
+            composite_path
+        )
+
+        if not success or not composite_path.exists():
+            return web.json_response({
+                "success": False,
+                "error": "Failed to create composite"
+            }, status=500)
+
+        # Read and encode as base64
+        with open(composite_path, "rb") as f:
+            image_data = base64.b64encode(f.read()).decode("utf-8")
+
+        # Clean up
+        try:
+            composite_path.unlink()
+        except:
+            pass
+
+        return web.json_response({
+            "success": True,
+            "composite_base64": f"data:image/jpeg;base64,{image_data}"
+        })
+
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        print(f"[SEngine] Error in preview_composite: {e}")
         return web.json_response({
             "success": False,
             "error": str(e)
