@@ -11,7 +11,7 @@ import asyncio
 from aiohttp import web
 from server import PromptServer
 
-from .sengine_node import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS
+from .sengine_node import NODE_CLASS_MAPPINGS, NODE_DISPLAY_NAME_MAPPINGS, clear_lora_cache, get_lora_cache_info
 from .civitai_api import get_civitai_api
 from .lora_cache import get_cache_manager
 from .civitai_upload import CivitaiUploader, create_img2img_composite
@@ -183,6 +183,41 @@ async def clear_cache(request):
 
     except Exception as e:
         print(f"[SEngine] Error in clear_cache: {e}")
+        return web.json_response({
+            "success": False,
+            "error": str(e)
+        }, status=500)
+
+
+@PromptServer.instance.routes.post("/sengine/lora-memory/clear")
+async def clear_lora_memory(request):
+    """Clear loaded LoRA weights from memory."""
+    try:
+        count = clear_lora_cache()
+        return web.json_response({
+            "success": True,
+            "cleared_count": count,
+            "message": f"Cleared {count} LoRA(s) from memory"
+        })
+    except Exception as e:
+        print(f"[SEngine] Error in clear_lora_memory: {e}")
+        return web.json_response({
+            "success": False,
+            "error": str(e)
+        }, status=500)
+
+
+@PromptServer.instance.routes.get("/sengine/lora-memory/info")
+async def lora_memory_info(request):
+    """Get info about LoRAs loaded in memory."""
+    try:
+        info = get_lora_cache_info()
+        return web.json_response({
+            "success": True,
+            **info
+        })
+    except Exception as e:
+        print(f"[SEngine] Error in lora_memory_info: {e}")
         return web.json_response({
             "success": False,
             "error": str(e)

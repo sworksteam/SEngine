@@ -23,13 +23,35 @@ def send_progress(version_id, progress, status="downloading", name=""):
         pass
 
 
+# Module-level cache for loaded LoRA weights (persists across node instances)
+_lora_cache = {}
+
+
+def clear_lora_cache():
+    """Clear the LoRA weight cache to free memory."""
+    global _lora_cache
+    count = len(_lora_cache)
+    _lora_cache.clear()
+    print(f"[SEngine] Cleared {count} LoRA(s) from cache")
+    return count
+
+
+def get_lora_cache_info():
+    """Get info about cached LoRAs."""
+    global _lora_cache
+    return {
+        "count": len(_lora_cache),
+        "paths": list(_lora_cache.keys())
+    }
+
+
 class SEngineLoraLoader:
     """
     Dynamic LoRA loader controlled via SEngine sidebar.
     """
 
     def __init__(self):
-        self.loaded_loras = {}
+        pass  # Use module-level cache instead of instance cache
 
     @classmethod
     def INPUT_TYPES(cls):
@@ -150,14 +172,33 @@ class SEngineLoraLoader:
 
             # Load and apply
             try:
-                if local_path not in self.loaded_loras:
+                global _lora_cache
+                if local_path not in _lora_cache:
                     print(f"[SEngine] Loading from disk: {local_path}")
-                    self.loaded_loras[local_path] = comfy.utils.load_torch_file(local_path, safe_load=True)
+                    try:
+                        _lora_cache[local_path] = comfy.utils.load_torch_file(local_path, safe_load=True)
+                    except Exception as load_error:
+                        # Check if it's a corrupted file error
+                        error_str = str(load_error)
+                        if "incomplete metadata" in error_str or "not fully covered" in error_str or "SafetensorError" in str(type(load_error)):
+                            print(f"[SEngine] Corrupted file detected, deleting: {local_path}")
+                            import os
+                            try:
+                                os.remove(local_path)
+                                # Remove from manifest so it can be re-downloaded
+                                cache_manager._manifest.get("files", {}).pop(str(version_id), None)
+                                cache_manager._save_manifest()
+                                print(f"[SEngine] Deleted corrupted file. Re-run workflow to re-download {name}")
+                            except Exception as del_error:
+                                print(f"[SEngine] Error deleting corrupted file: {del_error}")
+                        raise
+                else:
+                    print(f"[SEngine] Using cached: {name}")
 
                 current_model, current_clip = comfy.sd.load_lora_for_models(
                     current_model,
                     current_clip,
-                    self.loaded_loras[local_path],
+                    _lora_cache[local_path],
                     strength,
                     strength_clip
                 )

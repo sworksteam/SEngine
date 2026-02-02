@@ -848,6 +848,9 @@ class SEngineManager {
                     <span>Upload Last Image</span>
                 </button>
                 <div class="sengine-upload-status"></div>
+                <button class="sengine-btn sengine-clear-memory" style="width:100%;margin-top:10px;font-size:11px;padding:6px;">
+                    Clear LoRA Memory Cache
+                </button>
             </div>
         `;
 
@@ -879,6 +882,28 @@ class SEngineManager {
 
         // Upload button
         panel.querySelector(".sengine-upload-btn").onclick = () => this.uploadToCivitai();
+
+        // Clear memory button
+        panel.querySelector(".sengine-clear-memory").onclick = async () => {
+            const btn = panel.querySelector(".sengine-clear-memory");
+            const originalText = btn.textContent;
+            btn.textContent = "Clearing...";
+            btn.disabled = true;
+            try {
+                const resp = await api.fetchApi("/sengine/lora-memory/clear", { method: "POST" });
+                const result = await resp.json();
+                if (result.success) {
+                    btn.textContent = `Cleared ${result.cleared_count} LoRA(s)!`;
+                    setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2000);
+                } else {
+                    btn.textContent = "Error!";
+                    setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2000);
+                }
+            } catch (e) {
+                btn.textContent = "Error!";
+                setTimeout(() => { btn.textContent = originalText; btn.disabled = false; }, 2000);
+            }
+        };
 
         // Setup filter dropdown after panel is ready
         setTimeout(() => {
