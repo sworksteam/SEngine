@@ -1122,14 +1122,44 @@ class SEngineManager {
 
             // Look for CLIP text encode (positive prompt)
             if (node.type === "CLIPTextEncode") {
-                // Check if this is connected to positive conditioning
-                // For now, use the first one we find as positive, second as negative
+                // Determine if this is positive or negative by checking connections
+                let isPositive = null;
+
+                // Check what this node connects to
+                if (node.outputs && node.outputs[0] && node.outputs[0].links) {
+                    for (const linkId of node.outputs[0].links) {
+                        const link = app.graph.links[linkId];
+                        if (link) {
+                            const targetNode = app.graph.getNodeById(link.target_id);
+                            if (targetNode) {
+                                const targetInput = targetNode.inputs[link.target_slot];
+                                if (targetInput) {
+                                    // Check input name
+                                    if (targetInput.name === "positive") {
+                                        isPositive = true;
+                                    } else if (targetInput.name === "negative") {
+                                        isPositive = false;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+
+                // Get the text value
                 for (const widget of (node.widgets || [])) {
                     if (widget.name === "text") {
-                        if (metadata.prompt === null) {
+                        if (isPositive === true) {
                             metadata.prompt = widget.value;
-                        } else if (metadata.negative_prompt === null) {
+                        } else if (isPositive === false) {
                             metadata.negative_prompt = widget.value;
+                        } else {
+                            // Fallback: if we can't determine, use first as positive, second as negative
+                            if (metadata.prompt === null) {
+                                metadata.prompt = widget.value;
+                            } else if (metadata.negative_prompt === null) {
+                                metadata.negative_prompt = widget.value;
+                            }
                         }
                     }
                 }

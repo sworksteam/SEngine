@@ -144,7 +144,15 @@ class LoRACacheManager:
             # Download
             with urllib.request.urlopen(request, context=ssl_context) as response:
                 total_size = int(response.headers.get('content-length', 0))
+                content_type = response.headers.get('content-type', '')
                 downloaded = 0
+
+                print(f"[SEngine] Response content-type: {content_type}")
+                print(f"[SEngine] Expected size: {total_size / (1024*1024):.1f} MB")
+
+                # Check if we got an HTML page instead of a file
+                if 'text/html' in content_type.lower():
+                    return (False, "Download URL returned HTML page instead of file. Check API key or URL.")
 
                 with open(local_path, 'wb') as f:
                     while True:
@@ -167,7 +175,21 @@ class LoRACacheManager:
                             print(f"[SEngine] Progress: {mb_done:.1f}/{mb_total:.1f} MB")
 
             # Verify download
-            if os.path.exists(local_path) and os.path.getsize(local_path) > 0:
+            if os.path.exists(local_path):
+                actual_size = os.path.getsize(local_path)
+
+                if actual_size == 0:
+                    os.remove(local_path)
+                    return (False, "Download produced empty file")
+
+                # Verify size matches expected if we got content-length
+                if total_size > 0 and actual_size != total_size:
+                    print(f"[SEngine] Size mismatch: expected {total_size}, got {actual_size}")
+                    os.remove(local_path)
+                    return (False, f"Download incomplete: {actual_size}/{total_size} bytes")
+
+                print(f"[SEngine] Download verification passed ({actual_size} bytes)")
+
                 # Update manifest - store only filename, not full path
                 if "files" not in self._manifest:
                     self._manifest["files"] = {}
@@ -185,7 +207,7 @@ class LoRACacheManager:
                 print(f"[SEngine] Download complete: {local_path}")
                 return (True, local_path)
             else:
-                return (False, "Download produced empty file")
+                return (False, "Download produced no file")
 
         except urllib.error.HTTPError as e:
             error_msg = f"HTTP Error {e.code}: {e.reason}"
