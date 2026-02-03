@@ -39,7 +39,53 @@ const STYLES = `
     gap: 8px;
 }
 .sengine-title::before { content: "⚡"; }
-.sengine-api-row { margin-bottom: 10px; }
+.sengine-target {
+    padding: 8px 12px;
+    background: #1e1e1e;
+    border: 1px solid #333;
+    border-radius: 6px;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+.sengine-tabs {
+    display: flex;
+    gap: 4px;
+    margin-top: 12px;
+}
+.sengine-tab {
+    flex: 1;
+    padding: 8px 12px;
+    border: none;
+    border-radius: 6px 6px 0 0;
+    background: #1e1e1e;
+    color: #888;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.sengine-tab:hover {
+    background: #252525;
+    color: #aaa;
+}
+.sengine-tab.active {
+    background: #2a2a2a;
+    color: #5a5;
+    border-bottom: 2px solid #5a5;
+}
+.sengine-tab-content {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    overflow: hidden;
+}
+.sengine-upload-area {
+    padding: 12px 16px;
+    background: #252525;
+    border-bottom: 1px solid #333;
+}
 .sengine-label {
     font-size: 10px;
     color: #888;
@@ -59,15 +105,6 @@ const STYLES = `
     box-sizing: border-box;
 }
 .sengine-input:focus { border-color: #5a5; outline: none; }
-.sengine-target {
-    padding: 8px 12px;
-    background: #252525;
-    border-radius: 6px;
-    font-size: 11px;
-    display: flex;
-    align-items: center;
-    gap: 8px;
-}
 .sengine-dot {
     width: 8px;
     height: 8px;
@@ -199,31 +236,6 @@ const STYLES = `
     opacity: 0.7;
 }
 .sengine-selected-tag-remove:hover { opacity: 1; }
-.sengine-upload-section {
-    padding: 12px 16px;
-    background: #252525;
-    border-top: 1px solid #333;
-}
-.sengine-upload-section-title {
-    font-size: 11px;
-    font-weight: 600;
-    color: #888;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
-    margin-bottom: 10px;
-}
-.sengine-cookie-input {
-    width: 100%;
-    padding: 8px 10px;
-    border: 1px solid #444;
-    border-radius: 6px;
-    background: #1e1e1e;
-    color: #fff;
-    font-size: 11px;
-    box-sizing: border-box;
-    margin-bottom: 10px;
-}
-.sengine-cookie-input:focus { border-color: #5a5; outline: none; }
 .sengine-upload-btn {
     width: 100%;
     padding: 10px 16px;
@@ -286,6 +298,13 @@ const STYLES = `
     font-size: 11px;
     color: #888;
     margin-bottom: 16px;
+    text-align: center;
+}
+.sengine-modal-message {
+    font-size: 12px;
+    color: #ccc;
+    margin-bottom: 20px;
+    line-height: 1.5;
     text-align: center;
 }
 .sengine-modal-preview {
@@ -518,6 +537,175 @@ const STYLES = `
     color: #fff;
     text-shadow: 0 1px 2px rgba(0,0,0,0.5);
 }
+.sengine-image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    margin-bottom: 20px;
+    max-height: 60vh;
+    overflow-y: auto;
+    padding: 8px;
+}
+.sengine-image-option {
+    background: #1e1e1e;
+    border: 2px solid #444;
+    border-radius: 8px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.sengine-image-option:hover {
+    border-color: #5a5;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(90,170,90,0.3);
+}
+.sengine-image-option img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    display: block;
+}
+.sengine-image-label {
+    padding: 8px;
+    text-align: center;
+    font-size: 11px;
+    color: #aaa;
+    background: #252525;
+}
+.sengine-selected-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+.sengine-save-config-btn {
+    padding: 4px 8px;
+    border: none;
+    border-radius: 4px;
+    background: #3a3a3a;
+    color: #fff;
+    font-size: 14px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.sengine-save-config-btn:hover {
+    background: #4a4a4a;
+    transform: scale(1.1);
+}
+.sengine-saved-section {
+    padding: 12px 16px;
+    background: #252525;
+    border-bottom: 1px solid #333;
+    max-height: 250px;
+    overflow-y: auto;
+}
+.sengine-settings-content {
+    flex: 1;
+    padding: 16px;
+    overflow-y: auto;
+}
+.sengine-settings-group {
+    margin-bottom: 20px;
+}
+.sengine-settings-group:last-child {
+    margin-bottom: 0;
+}
+.sengine-help-text {
+    margin-top: 6px;
+    font-size: 10px;
+    color: #666;
+    line-height: 1.4;
+}
+.sengine-saved-header {
+    font-size: 11px;
+    font-weight: 600;
+    color: #888;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 10px;
+}
+.sengine-saved-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+.sengine-saved-config {
+    display: flex;
+    gap: 10px;
+    padding: 8px;
+    background: #1e1e1e;
+    border-radius: 6px;
+    border: 1px solid #333;
+    transition: all 0.2s;
+    cursor: pointer;
+}
+.sengine-saved-config:hover {
+    border-color: #5a5;
+    background: #252525;
+}
+.sengine-config-thumb {
+    width: 60px;
+    height: 60px;
+    border-radius: 4px;
+    overflow: hidden;
+    background: #2a2a2a;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+.sengine-config-thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+.sengine-config-no-thumb {
+    font-size: 9px;
+    color: #555;
+    text-align: center;
+}
+.sengine-config-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-width: 0;
+}
+.sengine-config-name {
+    font-size: 12px;
+    color: #fff;
+    font-weight: 500;
+    margin-bottom: 4px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.sengine-config-meta {
+    font-size: 10px;
+    color: #666;
+}
+.sengine-config-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    justify-content: center;
+}
+.sengine-config-load,
+.sengine-config-delete {
+    padding: 4px 6px;
+    border: none;
+    border-radius: 4px;
+    background: #3a3a3a;
+    color: #fff;
+    font-size: 12px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.sengine-config-load:hover {
+    background: #4a7;
+}
+.sengine-config-delete:hover {
+    background: #a44;
+}
 `;
 
 // ============================================================================
@@ -563,7 +751,8 @@ class SEngineManager {
         this.apiKey = localStorage.getItem("sengine_api_key") || "";
         this.sessionCookie = localStorage.getItem("sengine_session_cookie") || "";
         this.targetNode = null;
-        this.lastGeneratedImage = null;
+        this.lastGeneratedImages = []; // Array of {filename, subfolder, type}
+        this.savedConfigs = this.loadSavedConfigs();
     }
 
     getOrCreateNode() {
@@ -705,11 +894,24 @@ class SEngineManager {
     }
 
     toggleLora(lora) {
+        // Check if trying to select (not deselect)
+        const idx = this.selectedLoras.findIndex(l => l.version_id === lora.version_id);
+        const isSelecting = idx < 0;
+
+        // If selecting a new LoRA, check if API key is set
+        if (isSelecting && (!this.apiKey || this.apiKey.trim() === "")) {
+            this.showWarningModal(
+                "API Key Required",
+                "You need to enter your Civitai API key in the Settings tab before selecting LoRAs. The API key is required for downloading LoRA files from Civitai.",
+                "Go to Settings"
+            );
+            return;
+        }
+
         if (!this.targetNode) {
             this.getOrCreateNode();
         }
 
-        const idx = this.selectedLoras.findIndex(l => l.version_id === lora.version_id);
         if (idx >= 0) {
             this.selectedLoras.splice(idx, 1);
         } else {
@@ -807,50 +1009,81 @@ class SEngineManager {
         panel.innerHTML = `
             <div class="sengine-header">
                 <div class="sengine-title">SEngine LoRAs</div>
-                <div class="sengine-api-row">
-                    <label class="sengine-label">Civitai API Key</label>
-                    <input type="password" class="sengine-input sengine-api-key" placeholder="Enter API key for downloads...">
-                </div>
-                <div class="sengine-target">
-                    <div class="sengine-dot"></div>
-                    <span class="sengine-target-text">Click a LoRA to create node</span>
+                <div class="sengine-tabs">
+                    <button class="sengine-tab active" data-tab="loras">LoRAs</button>
+                    <button class="sengine-tab" data-tab="settings">Settings</button>
                 </div>
             </div>
-            <div class="sengine-toolbar">
-                <input type="text" class="sengine-search" placeholder="Search LoRAs...">
-                <button class="sengine-btn sengine-refresh">↻</button>
-            </div>
-            <div class="sengine-filter-row">
-                <div class="sengine-filter-container">
-                    <button class="sengine-filter-btn">
-                        <span class="sengine-filter-text">Filter by tags...</span>
-                        <span class="sengine-filter-arrow">▼</span>
+
+            <!-- LoRAs Tab -->
+            <div class="sengine-tab-content" data-tab="loras">
+                <div class="sengine-upload-area">
+                    <button class="sengine-upload-btn" disabled>
+                        <span>📤</span>
+                        <span>Upload Last Image</span>
                     </button>
-                    <div class="sengine-filter-dropdown"></div>
+                    <div class="sengine-upload-status"></div>
                 </div>
-                <div class="sengine-selected-tags"></div>
-            </div>
-            <div class="sengine-browser">
-                <div class="sengine-empty">Click ↻ to load LoRAs</div>
-            </div>
-            <div class="sengine-status"></div>
-            <div class="sengine-selected">
-                <div class="sengine-selected-header">Selected (<span class="sengine-count">0</span>)</div>
-                <div class="sengine-selected-list">
-                    <div class="sengine-empty">Select LoRAs above</div>
+                <div class="sengine-saved-section">
+                    <div class="sengine-saved-header">Saved Configurations</div>
+                    <div class="sengine-saved-list"></div>
+                </div>
+                <div class="sengine-toolbar">
+                    <input type="text" class="sengine-search" placeholder="Search LoRAs...">
+                    <button class="sengine-btn sengine-refresh">↻</button>
+                </div>
+                <div class="sengine-filter-row">
+                    <div class="sengine-filter-container">
+                        <button class="sengine-filter-btn">
+                            <span class="sengine-filter-text">Filter by tags...</span>
+                            <span class="sengine-filter-arrow">▼</span>
+                        </button>
+                        <div class="sengine-filter-dropdown"></div>
+                    </div>
+                    <div class="sengine-selected-tags"></div>
+                </div>
+                <div class="sengine-browser">
+                    <div class="sengine-empty">Click ↻ to load LoRAs</div>
+                </div>
+                <div class="sengine-status"></div>
+                <div class="sengine-selected">
+                    <div class="sengine-selected-header">
+                        <span>Selected (<span class="sengine-count">0</span>)</span>
+                        <button class="sengine-save-config-btn" title="Save Configuration">💾</button>
+                    </div>
+                    <div class="sengine-selected-list">
+                        <div class="sengine-empty">Select LoRAs above</div>
+                    </div>
                 </div>
             </div>
-            <div class="sengine-upload-section">
-                <div class="sengine-upload-section-title">Upload to Civitai</div>
-                <input type="password" class="sengine-cookie-input sengine-session-cookie" placeholder="Civitai session cookie...">
-                <button class="sengine-upload-btn" disabled>
-                    <span>📤</span>
-                    <span>Upload Last Image</span>
-                </button>
-                <div class="sengine-upload-status"></div>
-                <button class="sengine-btn sengine-clear-memory" style="width:100%;margin-top:10px;font-size:11px;padding:6px;">
-                    Clear LoRA Memory Cache
-                </button>
+
+            <!-- Settings Tab -->
+            <div class="sengine-tab-content" data-tab="settings" style="display:none;">
+                <div class="sengine-settings-content">
+                    <div class="sengine-settings-group">
+                        <label class="sengine-label">Node Status</label>
+                        <div class="sengine-target">
+                            <div class="sengine-dot"></div>
+                            <span class="sengine-target-text">Click a LoRA to create node</span>
+                        </div>
+                    </div>
+                    <div class="sengine-settings-group">
+                        <label class="sengine-label">Civitai API Key</label>
+                        <input type="password" class="sengine-input sengine-api-key" placeholder="Enter API key for downloads...">
+                        <div class="sengine-help-text">Required for downloading LoRAs from Civitai</div>
+                    </div>
+                    <div class="sengine-settings-group">
+                        <label class="sengine-label">Civitai Session Cookie</label>
+                        <input type="password" class="sengine-input sengine-session-cookie" placeholder="__Secure-civitai-token value...">
+                        <div class="sengine-help-text">Required for uploading images to Civitai. Go to LoRAs tab to upload.</div>
+                    </div>
+                    <div class="sengine-settings-group">
+                        <label class="sengine-label">Memory Management</label>
+                        <button class="sengine-btn sengine-clear-memory" style="width:100%;">
+                            Clear LoRA Memory Cache
+                        </button>
+                    </div>
+                </div>
             </div>
         `;
 
@@ -883,6 +1116,23 @@ class SEngineManager {
         // Upload button
         panel.querySelector(".sengine-upload-btn").onclick = () => this.uploadToCivitai();
 
+        // Tab switching
+        panel.querySelectorAll(".sengine-tab").forEach(tab => {
+            tab.onclick = () => {
+                const tabName = tab.dataset.tab;
+                // Update tab buttons
+                panel.querySelectorAll(".sengine-tab").forEach(t => t.classList.remove("active"));
+                tab.classList.add("active");
+                // Update tab content
+                panel.querySelectorAll(".sengine-tab-content").forEach(content => {
+                    content.style.display = content.dataset.tab === tabName ? "flex" : "none";
+                });
+            };
+        });
+
+        // Save config button
+        panel.querySelector(".sengine-save-config-btn").onclick = () => this.showSaveConfigModal();
+
         // Clear memory button
         panel.querySelector(".sengine-clear-memory").onclick = async () => {
             const btn = panel.querySelector(".sengine-clear-memory");
@@ -909,6 +1159,7 @@ class SEngineManager {
         setTimeout(() => {
             this.setupFilterDropdown();
             this.updateUploadButton();
+            this.renderSavedConfigs();
         }, 0);
 
         return panel;
@@ -1018,11 +1269,124 @@ class SEngineManager {
         });
     }
 
+    loadSavedConfigs() {
+        try {
+            const saved = localStorage.getItem("sengine_saved_configs");
+            return saved ? JSON.parse(saved) : [];
+        } catch (e) {
+            console.error("[SEngine] Error loading saved configs:", e);
+            return [];
+        }
+    }
+
+    saveSavedConfigs() {
+        try {
+            localStorage.setItem("sengine_saved_configs", JSON.stringify(this.savedConfigs));
+        } catch (e) {
+            console.error("[SEngine] Error saving configs:", e);
+        }
+    }
+
+    async saveCurrentConfig(name) {
+        if (!this.targetNode || this.selectedLoras.length === 0) {
+            return;
+        }
+
+        // Get current configuration
+        const overallWidget = this.targetNode.widgets?.find(w => w.name === "overall_strength");
+        const config = {
+            overall_strength: overallWidget?.value ?? 1.0,
+            loras: this.selectedLoras.map(l => ({
+                version_id: l.version_id,
+                name: l.name,
+                strength: l.strength,
+                strength_clip: l.strength_clip,
+                file_name: l.file_name,
+                download_url: l.download_url || "",
+                preview_url: l.preview_url || ""
+            }))
+        };
+
+        // Get thumbnail from last generated image
+        let thumbnail = null;
+        if (this.lastGeneratedImages.length > 0) {
+            const lastImg = this.lastGeneratedImages[this.lastGeneratedImages.length - 1];
+            const viewUrl = api.apiURL(`/view?filename=${encodeURIComponent(lastImg.filename)}&type=${lastImg.type}&subfolder=${encodeURIComponent(lastImg.subfolder)}`);
+
+            try {
+                // Create a small thumbnail
+                const img = new Image();
+                img.crossOrigin = "anonymous";
+                await new Promise((resolve, reject) => {
+                    img.onload = resolve;
+                    img.onerror = reject;
+                    img.src = viewUrl;
+                });
+
+                const canvas = document.createElement("canvas");
+                const ctx = canvas.getContext("2d");
+                const maxSize = 200;
+                const scale = Math.min(maxSize / img.width, maxSize / img.height);
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                thumbnail = canvas.toDataURL("image/jpeg", 0.7);
+            } catch (e) {
+                console.error("[SEngine] Error creating thumbnail:", e);
+            }
+        }
+
+        // Create saved config entry
+        const savedConfig = {
+            id: Date.now().toString(),
+            name: name,
+            timestamp: Date.now(),
+            thumbnail: thumbnail,
+            config: config
+        };
+
+        this.savedConfigs.push(savedConfig);
+        this.saveSavedConfigs();
+        this.renderSavedConfigs();
+    }
+
+    loadConfig(configId) {
+        const config = this.savedConfigs.find(c => c.id === configId);
+        if (!config) return;
+
+        // Load the configuration
+        this.selectedLoras = config.config.loras.map(l => ({ ...l }));
+
+        // Update or create node
+        if (!this.targetNode) {
+            this.createNode();
+        }
+
+        if (this.targetNode) {
+            // Update overall strength
+            const overallWidget = this.targetNode.widgets?.find(w => w.name === "overall_strength");
+            if (overallWidget) {
+                overallWidget.value = config.config.overall_strength;
+            }
+
+            this.saveToNode();
+        }
+
+        this.renderSelected();
+        this.renderGrid();
+    }
+
+    deleteConfig(configId) {
+        this.savedConfigs = this.savedConfigs.filter(c => c.id !== configId);
+        this.saveSavedConfigs();
+        this.renderSavedConfigs();
+    }
+
     updateUploadButton() {
         const btn = this.panel?.querySelector(".sengine-upload-btn");
         if (!btn) return;
 
-        const hasImage = !!this.lastGeneratedImage;
+        const hasImage = this.lastGeneratedImages.length > 0;
         const hasCookie = !!this.sessionCookie;
         btn.disabled = !hasImage || !hasCookie;
 
@@ -1032,16 +1396,12 @@ class SEngineManager {
                 label.textContent = "Enter session cookie";
             } else if (!hasImage) {
                 label.textContent = "No image generated yet";
+            } else if (this.lastGeneratedImages.length > 1) {
+                label.textContent = `Upload Image (${this.lastGeneratedImages.length})`;
             } else {
                 label.textContent = "Upload Last Image";
             }
         }
-    }
-
-    setLastGeneratedImage(imagePath) {
-        this.lastGeneratedImage = imagePath;
-        this.updateUploadButton();
-        console.log("[SEngine] Last generated image:", imagePath);
     }
 
     extractWorkflowMetadata() {
@@ -1196,6 +1556,192 @@ class SEngineManager {
         return metadata;
     }
 
+    showWarningModal(title, message, buttonText = "OK") {
+        const overlay = document.createElement("div");
+        overlay.className = "sengine-modal-overlay";
+
+        overlay.innerHTML = `
+            <div class="sengine-modal" style="max-width:400px;">
+                <div class="sengine-modal-title">${title}</div>
+                <div class="sengine-modal-message">${message}</div>
+                <div class="sengine-modal-buttons">
+                    <button class="sengine-modal-btn primary" data-action="ok">${buttonText}</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const handleClose = () => {
+            document.body.removeChild(overlay);
+            // If button says "Go to Settings", switch to settings tab
+            if (buttonText === "Go to Settings" && this.panel) {
+                const settingsTab = this.panel.querySelector('.sengine-tab[data-tab="settings"]');
+                if (settingsTab) {
+                    settingsTab.click();
+                }
+            }
+        };
+
+        overlay.querySelector('[data-action="ok"]').onclick = handleClose;
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                handleClose();
+            }
+        };
+    }
+
+    showSaveConfigModal() {
+        if (!this.targetNode || this.selectedLoras.length === 0) {
+            alert("Please select some LoRAs first!");
+            return;
+        }
+
+        const overlay = document.createElement("div");
+        overlay.className = "sengine-modal-overlay";
+
+        overlay.innerHTML = `
+            <div class="sengine-modal" style="max-width:400px;">
+                <div class="sengine-modal-title">Save Configuration</div>
+                <div class="sengine-modal-subtitle">Enter a name for this configuration</div>
+                <input type="text" class="sengine-input" placeholder="Configuration name..." style="margin-bottom:16px;">
+                <div class="sengine-modal-buttons">
+                    <button class="sengine-modal-btn primary" data-action="save">Save</button>
+                    <button class="sengine-modal-btn cancel" data-action="cancel">Cancel</button>
+                </div>
+            </div>
+        `;
+
+        document.body.appendChild(overlay);
+
+        const input = overlay.querySelector("input");
+        input.focus();
+
+        const handleSave = async () => {
+            const name = input.value.trim();
+            if (!name) {
+                alert("Please enter a name!");
+                return;
+            }
+            document.body.removeChild(overlay);
+            await this.saveCurrentConfig(name);
+        };
+
+        input.onkeydown = (e) => {
+            if (e.key === "Enter") handleSave();
+        };
+
+        overlay.querySelector('[data-action="save"]').onclick = handleSave;
+        overlay.querySelector('[data-action="cancel"]').onclick = () => {
+            document.body.removeChild(overlay);
+        };
+
+        overlay.onclick = (e) => {
+            if (e.target === overlay) {
+                document.body.removeChild(overlay);
+            }
+        };
+    }
+
+    renderSavedConfigs() {
+        const container = this.panel?.querySelector(".sengine-saved-list");
+        if (!container) return;
+
+        if (this.savedConfigs.length === 0) {
+            container.innerHTML = '<div class="sengine-empty" style="padding:12px;text-align:center;">No saved configurations</div>';
+            return;
+        }
+
+        container.innerHTML = this.savedConfigs.map(config => {
+            const date = new Date(config.timestamp).toLocaleDateString();
+            const loraCount = config.config.loras.length;
+            const thumbnailHtml = config.thumbnail
+                ? `<img src="${config.thumbnail}" alt="${config.name}">`
+                : '<div class="sengine-config-no-thumb">No preview</div>';
+
+            return `
+                <div class="sengine-saved-config" data-id="${config.id}">
+                    <div class="sengine-config-thumb">${thumbnailHtml}</div>
+                    <div class="sengine-config-info">
+                        <div class="sengine-config-name">${config.name}</div>
+                        <div class="sengine-config-meta">${loraCount} LoRA${loraCount > 1 ? 's' : ''} • ${date}</div>
+                    </div>
+                    <div class="sengine-config-actions">
+                        <button class="sengine-config-load" title="Load">📂</button>
+                        <button class="sengine-config-delete" title="Delete">🗑️</button>
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        // Add event listeners
+        container.querySelectorAll(".sengine-saved-config").forEach(el => {
+            const id = el.dataset.id;
+            el.querySelector(".sengine-config-load").onclick = () => this.loadConfig(id);
+            el.querySelector(".sengine-config-delete").onclick = (e) => {
+                e.stopPropagation();
+                if (confirm("Delete this configuration?")) {
+                    this.deleteConfig(id);
+                }
+            };
+        });
+    }
+
+    showImageSelectionModal(images) {
+        return new Promise((resolve) => {
+            const overlay = document.createElement("div");
+            overlay.className = "sengine-modal-overlay";
+
+            const imageGridHtml = images.map((img, idx) => {
+                const viewUrl = api.apiURL(`/view?filename=${encodeURIComponent(img.filename)}&type=${img.type}&subfolder=${encodeURIComponent(img.subfolder)}`);
+                return `
+                    <div class="sengine-image-option" data-index="${idx}">
+                        <img src="${viewUrl}" alt="Image ${idx + 1}">
+                        <div class="sengine-image-label">Image ${idx + 1}</div>
+                    </div>
+                `;
+            }).join('');
+
+            overlay.innerHTML = `
+                <div class="sengine-modal">
+                    <div class="sengine-modal-title">Select Image to Upload</div>
+                    <div class="sengine-modal-subtitle">Choose which image from the batch to upload</div>
+                    <div class="sengine-image-grid">
+                        ${imageGridHtml}
+                    </div>
+                    <div class="sengine-modal-buttons">
+                        <button class="sengine-modal-btn cancel" data-choice="cancel">Cancel</button>
+                    </div>
+                </div>
+            `;
+
+            document.body.appendChild(overlay);
+
+            // Handle image selection
+            overlay.querySelectorAll(".sengine-image-option").forEach(option => {
+                option.onclick = () => {
+                    const index = parseInt(option.dataset.index);
+                    document.body.removeChild(overlay);
+                    resolve(index);
+                };
+            });
+
+            // Handle cancel
+            overlay.querySelector(".cancel").onclick = () => {
+                document.body.removeChild(overlay);
+                resolve(null);
+            };
+
+            // Close on overlay click
+            overlay.onclick = (e) => {
+                if (e.target === overlay) {
+                    document.body.removeChild(overlay);
+                    resolve(null);
+                }
+            };
+        });
+    }
+
     showCompositePreviewModal(compositeBase64, metadata, loraVersionIds, sengineConfig) {
         return new Promise((resolve) => {
             const overlay = document.createElement("div");
@@ -1227,12 +1773,33 @@ class SEngineManager {
     }
 
     async uploadToCivitai() {
-        if (!this.lastGeneratedImage || !this.sessionCookie) {
+        if (this.lastGeneratedImages.length === 0) {
+            return;
+        }
+
+        if (!this.sessionCookie || this.sessionCookie.trim() === "") {
+            this.showWarningModal(
+                "Session Cookie Required",
+                "You need to enter your Civitai session cookie in the Settings tab before uploading images. The cookie is required for authenticating with Civitai.",
+                "Go to Settings"
+            );
             return;
         }
 
         const statusEl = this.panel?.querySelector(".sengine-upload-status");
         const btn = this.panel?.querySelector(".sengine-upload-btn");
+
+        // If multiple images, show selection modal
+        let selectedImageIndex = 0;
+        if (this.lastGeneratedImages.length > 1) {
+            selectedImageIndex = await this.showImageSelectionModal(this.lastGeneratedImages);
+            if (selectedImageIndex === null) {
+                // User cancelled
+                return;
+            }
+        }
+
+        const selectedImage = this.lastGeneratedImages[selectedImageIndex];
 
         // Get workflow metadata
         const metadata = this.extractWorkflowMetadata();
@@ -1266,9 +1833,9 @@ class SEngineManager {
                     method: "POST",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({
-                        image_path: this.lastGeneratedImage,
-                        image_subfolder: this.lastImageSubfolder || "",
-                        image_type: this.lastImageType || "output",
+                        image_path: selectedImage.filename,
+                        image_subfolder: selectedImage.subfolder,
+                        image_type: selectedImage.type,
                         source_images: metadata.source_images,
                     }),
                 });
@@ -1310,9 +1877,9 @@ class SEngineManager {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    image_path: this.lastGeneratedImage,
-                    image_subfolder: this.lastImageSubfolder || "",
-                    image_type: this.lastImageType || "output",
+                    image_path: selectedImage.filename,
+                    image_subfolder: selectedImage.subfolder,
+                    image_type: selectedImage.type,
                     session_cookie: this.sessionCookie,
                     lora_version_ids: loraVersionIds,
                     prompt: metadata.prompt,
@@ -1517,24 +2084,14 @@ app.registerExtension({
         api.addEventListener("executed", (event) => {
             const output = event.detail?.output;
             if (output?.images && output.images.length > 0) {
-                // Get the last image from the output
-                const lastImage = output.images[output.images.length - 1];
-                if (lastImage.filename) {
-                    // Construct the full path
-                    const subfolder = lastImage.subfolder || "";
-                    const type = lastImage.type || "output";
-                    // The image is in ComfyUI's output folder
-                    // We'll fetch the actual path from the server or construct it
-                    const imagePath = subfolder
-                        ? `${type}/${subfolder}/${lastImage.filename}`
-                        : `${type}/${lastImage.filename}`;
-
-                    // Store for upload - we need the actual filesystem path
-                    // ComfyUI stores output images in the output directory
-                    sengine.setLastGeneratedImage(lastImage.filename);
-                    sengine.lastImageSubfolder = subfolder;
-                    sengine.lastImageType = type;
-                }
+                // Store ALL images from the batch
+                sengine.lastGeneratedImages = output.images.map(img => ({
+                    filename: img.filename,
+                    subfolder: img.subfolder || "",
+                    type: img.type || "output"
+                }));
+                sengine.updateUploadButton();
+                console.log("[SEngine] Captured", sengine.lastGeneratedImages.length, "image(s)");
             }
         });
 
